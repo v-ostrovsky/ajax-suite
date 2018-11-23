@@ -1,0 +1,3 @@
+<div class="table-header" name="header"></div>
+<div style="overflow-y: scroll" name="content"></div>
+<div class="table-footer" name="footer"></div>

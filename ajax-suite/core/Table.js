@@ -65,7 +65,7 @@ define([ './Control' ], function(Control) {
 			section.element.empty().append(wrapper);
 
 			var ruler = $('<div>').appendTo(this.content.element), placeHolderWidth = section.element.innerWidth() - ruler.innerWidth();
-			this.fields[0].element.clone().html('').css({
+			this.header.handle.element.clone().html('').css({
 				'padding' : '0px',
 				'border-right' : 'none',
 				'flex' : '0 0 ' + placeHolderWidth + 'px'
