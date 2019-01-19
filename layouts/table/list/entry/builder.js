@@ -5,7 +5,7 @@ define([ 'as', './class', 'text!./template.htpl' ], function(as, Class, template
 
 		var controls = [];
 
-		var contextmenuItems = [ 'remove', 'edit', 'create' ].map(function(item) {
+		var contextmenuItems = [ 'remove', 'edit', 'copy', 'create' ].map(function(item) {
 			return {
 				name : item,
 				text : as.locale.contextmenu[item].text,

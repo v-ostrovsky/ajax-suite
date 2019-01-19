@@ -6,6 +6,7 @@ define([ 'as', './class', 'text!./template.htpl', './entry/builder' ], function(
 		var properties = {
 			template : template,
 			container : 'collection',
+			sortFields : [ context.fields[0] ],
 			entryBuilder : entryBuilder
 		};
 

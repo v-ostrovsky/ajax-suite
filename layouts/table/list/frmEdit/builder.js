@@ -5,7 +5,11 @@ define([ 'as', './class', 'text!./template.htpl' ], function(as, Form, template)
 
 		var controls = [];
 
-		properties.controls = controls;
+		properties = Object.assign(properties, {
+			template : template,
+			controls : controls,
+			header : (properties.attributes.id) ? as.locale.form.titleEdit : as.locale.form.titleCreate
+		});
 
 		return as.generics.form.builder(context, name, properties, (Class || Form));
 	}
