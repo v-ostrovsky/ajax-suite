@@ -28,7 +28,7 @@ define([ 'rear/FR', 'i18n!nls/root' ], function(FR, locale) {
 			}), worksheet = workbook.Sheets[sheetName];
 
 			if (!worksheet) {
-				this.application.showDialog(locale.error['excelFR'].header, locale.error['excelFR'].text + '"' + sheetName + '"', null);
+				this.application.showDialog(locale.message['excelFR'].header, locale.message['excelFR'].text + '"' + sheetName + '"', null);
 				return null;
 			}
 

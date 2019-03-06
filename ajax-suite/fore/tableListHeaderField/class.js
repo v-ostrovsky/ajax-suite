@@ -13,7 +13,7 @@ define([ '../tableHeaderField/class', 'core/primitives' ], function(Class, primi
 	TableListHeaderField.prototype.setSortButton = function(fieldComparator) {
 		this.comparator = fieldComparator;
 		this.element.append('<div name="button"></div>');
-		this.button = new primitives.Button(this, 'button', this.send.bind(this, 'header:sort'), '▽', false);
+		this.button = new primitives.Button(this, 'button').setHandler(this.send.bind(this, 'header:sort')).setContent('&#x25BD');
 		this.button.element.css({
 			'float' : 'right',
 			'cursor' : 'default',

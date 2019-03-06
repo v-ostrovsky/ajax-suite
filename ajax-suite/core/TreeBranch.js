@@ -10,11 +10,20 @@ define([ './Control' ], function(Control) {
 		this.collectionName = name;
 		this.template = template;
 		this.container = this.element.find('[name="' + container + '"]');
-		this.entryBuilder = entryBuilder;
-		this.branchBuilder = branchBuilder;
+		this.entryBuilder = entryBuilder || this.context.entryBuilder;
+		this.branchBuilder = branchBuilder || function(context) {
+			return new this.constructor(context, this.collectionName, this.template, this.container.attr('name'), this.entryBuilder);
+		}.bind(this);
 	}
 	TreeBranch.prototype = Object.create(Control.prototype);
 	TreeBranch.prototype.constructor = TreeBranch;
+
+	TreeBranch.prototype.setAsInvisible = function(flag) {
+		this.isInvisible = flag;
+		this.setVisibility(!flag);
+
+		return this;
+	}
 
 	TreeBranch.prototype.setState = function(state) {
 		if (this.collection.length) {
@@ -25,11 +34,7 @@ define([ './Control' ], function(Control) {
 			}
 
 			for ( var key in this.collection) {
-				if (this.state === 'expanded') {
-					this.collection[key].element.show()
-				} else {
-					this.collection[key].element.hide();
-				};
+				this.collection[key].setVisibility((this.state === 'expanded') && !this.collection[key].isInvisible);
 			}
 		} else {
 			this.state = 'none';
@@ -37,10 +42,7 @@ define([ './Control' ], function(Control) {
 	};
 
 	TreeBranch.prototype.addBranch = function(data, index) {
-		var branch = (this.branchBuilder) ? this.branchBuilder(this) : new this.constructor(this, this.collectionName, this.template, this.container.attr('name'), this.entryBuilder);
-		branch.buildContent(data.node, data.collection, index, data.state);
-
-		return branch;
+		return this.branchBuilder(this).buildContent(data.node, data.collection, index, data.state);
 	}
 
 	TreeBranch.prototype.buildContent = function(attributes, collection, itemId, state) {
@@ -130,6 +132,23 @@ define([ './Control' ], function(Control) {
 		this.forEachUp(function(entry) {
 			entry.contex.setState('collapsed');
 		});
+		return this;
+	}
+
+	TreeBranch.prototype.applyMask = function(ids) {
+		this.forEach(function(entry) {
+			entry.context.setAsInvisible(true);
+		});
+
+		ids.forEach(function(item) {
+			var entry = this.getEntryById(item);
+			entry.context.setAsInvisible(false);
+
+			entry.context.forEachUp(function(entryItem) {
+				entryItem.context.setAsInvisible(false);
+			});
+		}.bind(this));
+
 		return this;
 	}
 

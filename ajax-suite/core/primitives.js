@@ -19,8 +19,8 @@ define([ './Control' ], function(Control) {
 	/*
 	 * ------------- TOOLTIP CLASS --------------
 	 */
-	function Tooltip(context, name, text, mousePosition) {
-		Control.call(this, context, name);
+	function Tooltip(element, text, mousePosition) {
+		this.element = element;
 
 		this.element.html(text).addClass('tooltip').css({
 			'position' : 'absolute',
@@ -42,98 +42,235 @@ define([ './Control' ], function(Control) {
 			'top' : position.top + ((exceeding.top > 0) ? exceeding.top : 0)
 		});
 	}
-	Tooltip.prototype = Object.create(Control.prototype);
-	Tooltip.prototype.constructor = Tooltip;
 
 	primitives.Tooltip = Tooltip;
 
 	/*
-	 * ------------- BUTTON CLASS --------------
+	 * ------------- FIELD CLASS --------------
 	 */
-	function Button(context, name, handler, tooltip, image) {
-		Control.call(this, context, name);
+	function Field(context, name, template) {
+		Control.call(this, context, name, template);
 
-		this.handler = handler;
+		this.formatter = function(value) {
+			return value;
+		};
 
-		if (tooltip) {
-			var hoverEvent = null, mousePosition = {};
+		this.validator = function(self) {
+			return true;
+		};
+	}
+	Field.prototype = Object.create(Control.prototype);
+	Field.prototype.constructor = Field;
 
-			function onMouseMove(event) {
-				mousePosition = {
-					clientX : event.clientX,
-					clientY : event.clientY
-				};
+	Field.prototype._setTooltip_ = function(element, text) {
+		var hoverEvent = null, mousePosition = {};
+
+		function onMouseMove(event) {
+			mousePosition = {
+				clientX : event.clientX,
+				clientY : event.clientY
 			};
+		};
 
-			this.element.hover(function(event) {
+		element.off('mouseenter mouseleave').on({
+			mouseenter : function(event) {
 				hoverEvent = event;
 				$(document).on('mousemove', onMouseMove);
 
 				setTimeout(function() {
 					if (hoverEvent === event) {
-						this.element.append('<div name="tooltip"></div>')
-						this.tooltip = new Tooltip(this, 'tooltip', tooltip, mousePosition);
+						var tooltipElement = $('<div name="tooltip"></div>').appendTo(element.parent());
+						this.tooltip = new Tooltip(tooltipElement, text, mousePosition);
 					}
 				}.bind(this), 1000);
-			}.bind(this), function(event) {
+			}.bind(this),
+			mouseleave : function(event) {
 				hoverEvent = null, mousePosition = {};
 				$(document).off('mousemove', null, onMouseMove);
-				mousePosition = {};
 
 				if (this.tooltip) {
 					this.tooltip.element.remove();
 					delete this.tooltip;
 				}
-			}.bind(this));
+			}.bind(this)
+		});
+
+		return this;
+	}
+
+	Field.prototype.setHandler = function(handler) {
+		this.handler = handler;
+		return this;
+	}
+
+	Field.prototype.setCalculator = function(calculator) {
+		this.calculator = calculator;
+		return this;
+	}
+
+	Field.prototype.setFormatter = function(formatter) {
+		this.formatter = formatter;
+		return this;
+	}
+
+	Field.prototype.setValidator = function(validator) {
+		this.validator = validator;
+		return this;
+	}
+
+	Field.prototype.setTooltip = function(text) {
+		return this._setTooltip_(this.element, text);
+	}
+
+	Field.prototype.isValid = function() {
+		return this.validator(this);
+	}
+
+	Field.prototype.setValue = function(value) {
+		this.value = (typeof this.calculator === 'function') ? this.calculator(value) : value;
+		this.element.html(this.formatter(this.value));
+
+		return this;
+	}
+
+	Field.prototype.getValue = function() {
+		return this.value;
+	}
+
+	primitives.Field = Field;
+
+	/*
+	 * ------------- INPUT CLASS --------------
+	 */
+	function Input(context, name, template) {
+		Field.call(this, context, name, template);
+
+		this.element.on({
+			input : function(event) {
+				this.value = this.formatter(this.element.val());
+				this.send('field:input', event);
+			}.bind(this),
+			change : function(event) {
+				event.stopPropagation();
+				this.fire();
+			}.bind(this)
+		});
+
+		this.ondropfocus(this.setSelectionRange.bind(this));
+	}
+	Input.prototype = Object.create(Field.prototype);
+	Input.prototype.constructor = Input;
+
+	Input.prototype._allowedTags = function() {
+		return [ 'INPUT', 'TEXTAREA' ];
+	}
+
+	Input.prototype.on = function(control, eventType, data) {
+		if ([ 'control:focusout' ].includes(eventType)) {
+			this.element.val(this.formatter(this.value));
 		}
 
-		if (image) {
-			this.backdrop = $('<div name="backdrop"></div>').css({
-				background : 'white',
-				width : '100%',
-				height : '100%',
-				opacity : 1
-			}).appendTo(this.element);
+		return Field.prototype.on.call(this, control, eventType, data);
+	}
 
-			$(image).appendTo(this.backdrop).css({
-				width : '100%',
-				height : '100%'
-			});
-		}
+	Input.prototype.setSelectionRange = function(start, finish) {
+		(this.element.attr('type') != 'date') ? this.element[0].setSelectionRange(start || 0, finish || this.element.val().length) : null;
+	}
+
+	Input.prototype.setInputMask = function(inputMaskBuilder) {
+		inputMaskBuilder(this);
+		return this;
+	}
+
+	Input.prototype.fire = function() {
+		(typeof this.handler === 'function') ? this.handler(this) : this.send('control:changed');
+	}
+
+	Input.prototype.disable = function(flag) {
+		this.element.prop('disabled', flag);
+		return this;
+	}
+
+	Input.prototype.setValue = function(value) {
+		this.value = (typeof this.calculator === 'function') ? this.calculator(value) : value;
+		this.element.val(this.formatter(this.value));
+
+		return this;
+	}
+
+	primitives.Input = Input;
+
+	/*
+	 * ------------- BUTTON CLASS --------------
+	 */
+	function Button(context, name, template) {
+		Field.call(this, context, name, template);
+
+		this.isEnabled = true;
 
 		this.element.on({
 			keydown : function(event) {
 				if ([ 13 ].includes(event.which)) {
 					event.preventDefault();
-					this.click();
+					this.isEnabled ? this.fire() : null;
 				}
 			}.bind(this),
 			mousedown : function(event) {
 				event.preventDefault();
-				((event.which || 1) === 1) ? this.click() : null;
+				(((event.which || 1) === 1) && this.isEnabled) ? this.fire() : null;
 			}.bind(this)
 		});
 	}
-	Button.prototype = Object.create(Control.prototype);
+	Button.prototype = Object.create(Field.prototype);
 	Button.prototype.constructor = Button;
 
-	Button.prototype.click = function() {
-		this.handler(this);
+	// TODO Переименовать в setView
+	Button.prototype.setContent = function(content) {
+		if ([ '<' ].includes(content.charAt(0))) {
+			this.content = $(content).css({
+				width : '100%',
+				height : '100%'
+			});
+			this.element.html(this.content.clone());
+		} else {
+			this.content = content;
+			this.element.html(this.content);
+		}
+
+		return this;
 	}
 
-	Button.prototype.disabled = function(flag) {
-		this.element.prop('disabled', flag);
-		this.backdrop ? this.backdrop.css('opacity', flag ? 0.4 : 1) : null;
+	Button.prototype.getView = function() {
+		return this.content;
+	}
+
+	Button.prototype.fire = function() {
+		(typeof this.handler === 'function') ? this.handler(this) : this.send('control:changed');
+	}
+
+	Button.prototype.disable = function(flag) {
+		this.isEnabled = !flag;
+
+		if (this.tabindex != undefined) {
+			this.element.attr({
+				tabindex : flag ? 'none' : this.tabindex
+			});
+		} else {
+			this.element.removeAttr("tabindex");
+		}
+
+		this.element.css({
+			opacity : flag ? 0.5 : 1
+		});
+
 		return this;
 	}
 
 	Button.prototype.setValue = function(value) {
-		this.element.html(value);
-		return this;
-	}
+		this.value = (typeof this.calculator === 'function') ? this.calculator(value) : value;
+		this.content ? null : this.element.html(this.formatter(this.value));
 
-	Button.prototype.getValue = function() {
-		return this.element.html();
+		return this;
 	}
 
 	primitives.Button = Button;
@@ -141,16 +278,17 @@ define([ './Control' ], function(Control) {
 	/*
 	 * ------------- BUTTON FILE CLASS --------------
 	 */
-	function ButtonFile(context, name, handler, tooltip, image) {
-		Button.call(this, context, name, handler, tooltip, image);
+	function ButtonFile(context, name, template) {
+		Button.call(this, context, name, template);
 	}
 	ButtonFile.prototype = Object.create(Button.prototype);
 	ButtonFile.prototype.constructor = ButtonFile;
 
-	ButtonFile.prototype.click = function() {
+	ButtonFile.prototype.fire = function() {
 		$('<input type="file" />').on({
 			change : function(event) {
-				this.handler(this, event.target.files);
+				var files = event.target.files;
+				(typeof this.handler === 'function') ? this.handler(this, files) : this.send('control:changed', files);
 			}.bind(this)
 		}).click();
 	}
@@ -160,8 +298,8 @@ define([ './Control' ], function(Control) {
 	/*
 	 * ------------- BUTTON TOGGLE CLASS --------------
 	 */
-	function ButtonToggle(context, name, handler, tooltip, image) {
-		Button.call(this, context, name, handler, tooltip, image);
+	function ButtonToggle(context, name, template) {
+		Button.call(this, context, name, template);
 	}
 	ButtonToggle.prototype = Object.create(Button.prototype);
 	ButtonToggle.prototype.constructor = ButtonToggle;
@@ -173,78 +311,12 @@ define([ './Control' ], function(Control) {
 		return this;
 	}
 
-	ButtonToggle.prototype.click = function() {
+	ButtonToggle.prototype.fire = function() {
 		this.toggle(!this.state);
-		Button.prototype.click.call(this);
+		Button.prototype.fire.call(this);
 	}
 
 	primitives.ButtonToggle = ButtonToggle;
-
-	/*
-	 * ------------- FIELD CLASS --------------
-	 */
-	function Field(context, name, formatter, calculator, inputMaskBuilder) {
-		Control.call(this, context, name);
-		this.fn = this._fnName_();
-
-		this.formatter = (typeof formatter === 'function') ? formatter : function(value) {
-			return value;
-		};
-		this.calculator = calculator;
-
-		if (typeof inputMaskBuilder === 'function') {
-			inputMaskBuilder(this);
-		}
-
-		this.element.on({
-			input : function(event) {
-				this.value = this.formatter(this.element[this.fn]());
-				this.send('field:input', event);
-			}.bind(this),
-			change : function(event) {
-				event.stopPropagation();
-				this.send('control:changed', event);
-			}.bind(this)
-		});
-
-		this.ondropfocus(this.setSelectionRange.bind(this));
-	}
-	Field.prototype = Object.create(Control.prototype);
-	Field.prototype.constructor = Field;
-
-	Field.prototype._fnName_ = function() {
-		var tagName = this.element.prop('tagName');
-		if ([ 'INPUT', 'SELECT', 'TEXTAREA' ].includes(tagName)) {
-			return 'val';
-		} else {
-			return 'html';
-		}
-	}
-
-	Field.prototype.on = function(control, eventType, data) {
-		if ([ 'control:focusout' ].includes(eventType)) {
-			this.element[this.fn](this.formatter(this.value));
-		}
-
-		return Control.prototype.on.call(this, control, eventType, data);
-	}
-
-	Field.prototype.setSelectionRange = function() {
-		((typeof this.element[0].setSelectionRange === 'function') && (this.element.attr('type') != 'date')) ? this.element[0].setSelectionRange(0, this.element[this.fn]().length) : null;
-	}
-
-	Field.prototype.setValue = function(value) {
-		this.value = (typeof this.calculator === 'function') ? this.calculator(this.context, this, value) : value;
-		this.element[this.fn](this.formatter(this.value));
-
-		return this;
-	}
-
-	Field.prototype.getValue = function() {
-		return this.value;
-	}
-
-	primitives.Field = Field;
 
 	/*
 	 * ------------- RADIO CLASS --------------

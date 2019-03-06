@@ -1,0 +1,4 @@
+<div style="height: 100%; overflow-y: auto;">
+	<div style="display: flex;" name="node"></div>
+	<div style="padding-left: 11px;" name="selectTreeCollection"></div>
+</div>

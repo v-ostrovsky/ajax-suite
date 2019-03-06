@@ -2,7 +2,10 @@ define([ './class' ], function(Panel) {
 	"use strict";
 
 	function panel(context, name, properties, Class) {
-		return new (Class || Panel)(context, name, properties.template).setContent(properties.controls).send('setHeader', properties.header || '');
+		var panel = new (Class || Panel)(context, name, properties.template).send('setHeader', properties.header || '');
+		(Array.isArray(properties.controls)) ? panel.setContent(properties.controls) : null;
+
+		return panel;
 	}
 
 	return panel;

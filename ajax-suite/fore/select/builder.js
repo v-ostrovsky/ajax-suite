@@ -1,32 +1,19 @@
-define([ './class', 'objects/dir' ], function(Select, objects) {
+define([ './class' ], function(Select) {
 	"use strict";
 
 	function select(context, name, properties, Class) {
-
-		function listBuilder(context, name) {
-			return objects.selectList(context, name, properties.textId || 'textId', properties.sortOrder === 'desc');
-		}
-		function treeBuilder(context, name) {
-			return objects.selectTree(context, name, properties.textId || 'textId');
-		}
-
-		var select = new (Class || Select)(context, name, properties.dataProcessor).setRepository().setLabel(properties.text);
-		select.repository.storeBuilders(listBuilder, treeBuilder);
-
-		if (properties.typeOfContent != undefined) {
-			select.buildContent((properties.typeOfContent === 'tree') ? treeBuilder : listBuilder);
-		}
+		var select = new (Class || Select)(context, name, properties.contentBuilder);
+		(typeof properties.handler === 'function') ? select.setHandler(properties.handler) : null;
+		(typeof properties.validator === 'function') ? select.setValidator(properties.validator) : null;
+		(properties.defaultValue != undefined) ? select.setValue(properties.defaultValue) : null;
+		(typeof properties.text === 'string') ? select.setLabel(properties.text) : null;
 
 		if (properties.data) {
-			if (select.getContent() && (properties.dataProcessor === undefined)) {
+			if (typeof properties.dataProcessor != 'function') {
 				select.setContent(properties.data);
 			} else {
-				select.repository.storeData(properties.data, properties.dataProcessor);
+				// select.repository.storeData(properties.data, properties.dataProcessor);
 			}
-		}
-
-		if (properties.defaultValue != undefined) {
-			select.setValue(properties.defaultValue);
 		}
 
 		return select;

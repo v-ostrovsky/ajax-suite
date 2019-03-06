@@ -23,10 +23,6 @@ define([ './Form' ], function(Form) {
 		return Form.prototype.on.call(this, control, eventType, data);
 	}
 
-	Entry.prototype.getText = function() {
-		return this.tabLoop[0].getValue();
-	}
-
 	Entry.prototype.getValue = function() {
 		return this.attributes.id;
 	}

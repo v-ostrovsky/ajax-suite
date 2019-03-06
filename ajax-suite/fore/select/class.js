@@ -4,8 +4,8 @@ define([ 'core/Select', 'core/primitives' ], function(Class, primitives) {
 	/*
 	 * ------------- GENEGIC SELECT CLASS --------------
 	 */
-	function Select(context, name, dataProcessor) {
-		Class.call(this, context, name);
+	function Select(context, name, contentBuilder) {
+		Class.call(this, context, name, contentBuilder);
 	}
 	Select.prototype = Object.create(Class.prototype);
 	Select.prototype.constructor = Select;
@@ -18,10 +18,7 @@ define([ 'core/Select', 'core/primitives' ], function(Class, primitives) {
 	Select.prototype.setContent = function(data) {
 		if (typeof data.execute === 'function') {
 			this.dao = data.execute(function(response) {
-				Class.prototype.setContent.call(this, response);
-				if (this.getValue()) {
-					this.setValue(this.value);
-				}
+				Class.prototype.setContent.call(this, response).setValue(this.value);
 			}.bind(this));
 		} else {
 			Class.prototype.setContent.call(this, data);
@@ -30,25 +27,8 @@ define([ 'core/Select', 'core/primitives' ], function(Class, primitives) {
 		return this;
 	}
 
-	Select.prototype.execute = function(callback) {
-		if (this.dao) {
-			this.dao = this.dao.execute(function(response) {
-				callback.call(this, this.content.getData());
-			}.bind(this));
-		} else {
-			callback.call(this, this.content.getData());
-		}
-
-		return this;
-	}
-
 	Select.prototype.setValue = function(value) {
-		if (this.content && this.content.collection) {
-			Class.prototype.setValue.call(this, value);
-		} else {
-			this.value = value;
-		}
-
+		this.value = Class.prototype.setValue.call(this, value).getValue() || value;
 		return this;
 	}
 

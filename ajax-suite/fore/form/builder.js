@@ -7,8 +7,7 @@ define([ './class', '../button/builder', 'i18n!nls/root' ], function(Form, butto
 			var props = {
 				defaultValue : locale.form[item],
 				handler : function(self) {
-					self.context.send('execute', 'destroy');
-					return self.context.submit(properties.onSubmit);
+					self.context.submit(properties.onSubmit);
 				}
 			};
 

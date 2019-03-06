@@ -2,7 +2,12 @@ define([ './class' ], function(Entry) {
 	"use strict";
 
 	function entry(context, properties, Class) {
-		return new (Class || Entry)(context, properties.template).setContent(properties.controls).fillContent(properties.attributes).setContextmenu(properties.contextmenuItems);
+		var entry = new (Class || Entry)(context, properties.template);
+		(properties.controls != undefined) ? entry.setContent(properties.controls) : null;
+		(properties.attributes != undefined) ? entry.fillContent(properties.attributes) : null;
+		(properties.contextmenuItems != undefined) ? entry.setContextmenu(properties.contextmenuItems) : null;
+
+		return entry;
 	}
 
 	return entry;

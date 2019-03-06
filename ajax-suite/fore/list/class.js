@@ -31,7 +31,7 @@ define([ 'core/List' ], function(Class) {
 	List.prototype.create = function(formBuilder, attributes) {
 		var windowContentBuilder = function(context) {
 			var properties = {
-				attributes : Object.assign(this.dao.parse(attributes), attributes || {}, {
+				attributes : Object.assign(this.dao.dataspec(), attributes || {}, {
 					id : null
 				}),
 				onSubmit : function(windowContent) {
@@ -39,6 +39,7 @@ define([ 'core/List' ], function(Class) {
 						var entry = this.crud(-attributes.id, response);
 						(entry) ? entry.focus() : null;
 					}.bind(this));
+					windowContent.send('execute', 'destroy');
 				}.bind(this)
 			};
 
@@ -59,6 +60,7 @@ define([ 'core/List' ], function(Class) {
 						var entry = this.crud(-attributes.id, response);
 						(entry) ? entry.focus() : null;
 					}.bind(this));
+					windowContent.send('execute', 'destroy');
 				}.bind(this)
 			};
 
@@ -77,6 +79,7 @@ define([ 'core/List' ], function(Class) {
 						var entry = this.crud(attributes.id, response);
 						(entry) ? entry.focus() : null;
 					}.bind(this));
+					windowContent.send('execute', 'destroy');
 				}.bind(this)
 			};
 
@@ -95,6 +98,7 @@ define([ 'core/List' ], function(Class) {
 						var entry = this.crud(attributes.id);
 						(entry) ? entry.focus() : null;
 					}.bind(this));
+					windowContent.send('execute', 'destroy');
 				}.bind(this),
 				onNo : function(windowContent) {},
 				header : header,
@@ -111,7 +115,6 @@ define([ 'core/List' ], function(Class) {
 		this.parameters = parameters;
 
 		this.dao = this.dao[method](this.parameters).execute(function(response) {
-			this.setActiveElement(undefined);
 			this.setContent(response);
 		}.bind(this));
 

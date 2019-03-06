@@ -35,6 +35,13 @@ define([], function() {
 			this.element = element.append(template || '');
 		}
 
+		if (!this._allowedTags().includes(this.element.prop('tagName'))) {
+			console.warn('Invalid element tag "' + this.element.prop('tagName') + '" in ', this);
+		}
+
+		var tabindex = this.element.attr('tabindex');
+		this.tabindex = ([ undefined, 'none' ].includes(tabindex)) ? undefined : parseInt(this.element.attr('tabindex'));
+
 		this.name = this.element.attr('name');
 
 		this._onfocus = [];
@@ -49,7 +56,7 @@ define([], function() {
 				if ([ 9 ].includes(event.which)) {
 					event.preventDefault();
 					event.stopPropagation();
-					this._on_(this, 'control:tabulate', event);
+					this._on_(this, 'control:tabulate', 1);
 				}
 				if ([ 12 ].includes(event.which)) {
 					event.stopPropagation();
@@ -115,6 +122,10 @@ define([], function() {
 		(isPropagationAllowed !== false) ? this.context._on_(control, eventType, data) : null;
 	}
 
+	Control.prototype._allowedTags = function() {
+		return [ 'DIV' ];
+	}
+
 	Control.prototype.on = function(control, eventType, data) {}
 
 	Control.prototype.send = function(eventType, data) {
@@ -131,6 +142,10 @@ define([], function() {
 	Control.prototype.setActiveStatus = function(state) {
 		this.isActive = (state === 'active');
 		return this;
+	}
+
+	Control.prototype.getDefaultActiveElement = function() {
+		return null;
 	}
 
 	Control.prototype.onfocus = function(handler) {
@@ -228,10 +243,6 @@ define([], function() {
 		}
 
 		return this;
-	}
-
-	Control.prototype.getDefaultActiveElement = function() {
-		return null;
 	}
 
 	return Control;

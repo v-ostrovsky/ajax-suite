@@ -14,9 +14,6 @@ define([ './primitives' ], function(primitives) {
 		});
 
 		this.element.on({
-			dblclick : function(event) {
-				this.send('handle:dblclick');
-			}.bind(this),
 			mousedown : function(event) {
 				if (event.shiftKey) {
 					event.preventDefault();
@@ -24,6 +21,9 @@ define([ './primitives' ], function(primitives) {
 				if (event.which === 1) {
 					this.send('handle:mousedown', event);
 				}
+			}.bind(this),
+			dblclick : function(event) {
+				this.send('handle:dblclick');
 			}.bind(this)
 		});
 	}

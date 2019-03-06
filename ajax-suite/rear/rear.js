@@ -79,9 +79,13 @@ define([], function() {
 
 	Pendent.prototype._sendRequest = function() {}
 
+	Pendent.prototype._postProcessor = function(response) {
+		return response;
+	}
+
 	Pendent.prototype._oncomplete = function(status, response) {
 		this.status = status;
-		this._response_ = response;
+		this._response = this._postProcessor(response);
 		this._resolve_();
 	}
 
@@ -102,6 +106,10 @@ define([], function() {
 		Pendent.call(reopened, requestParams);
 
 		this._setHandler_(function() {
+			if (typeof reopened._requestParams === 'function') {
+				reopened._requestParams = reopened._requestParams(reopened._response);
+			}
+
 			mixin(reopened, this);
 			reopened._sendRequest();
 		}.bind(this));
@@ -118,12 +126,12 @@ define([], function() {
 		}
 
 		this._setHandler_(function() {
-			if (this._response_ !== false) {
+			if (this._response !== false) {
 				mixin(reopened, this);
 				var currentContext = rear.currentContext;
 				rear.currentContext = reopened;
-				var returnValue = callback.call(reopened, reopened._response_);
-				reopened._response_ = (returnValue != undefined) ? returnValue : reopened._response_;
+				var returnValue = callback.call(reopened, reopened._response);
+				reopened._response = (returnValue != undefined) ? returnValue : reopened._response;
 				rear.currentContext = currentContext;
 			}
 			reopened._resolve_();

@@ -38,8 +38,8 @@ define([ './Control', './primitives' ], function(Control, primitives) {
 		$('<div class="window-handle-title" name="title"></div>').appendTo(this.element);
 		this.title = new Title(this, '*/title');
 
-		$('<button style="font-size: 110%;" name="close">&#x2716</button>').appendTo(this.element);
-		this.btnClose = new primitives.Button(this, '*/close', this.context.destroy.bind(this.context));
+		$('<div style="font-size: 110%;" name="close">&#x2716</div>').appendTo(this.element);
+		this.btnClose = new primitives.Button(this, '*/close').setHandler(this.context.destroy.bind(this.context));
 
 		this.element.on({
 			mousedown : function(event) {
@@ -107,6 +107,10 @@ define([ './Control', './primitives' ], function(Control, primitives) {
 	Window.prototype.on = function(control, eventType, data) {
 		if ([ 'control:focusin' ].includes(eventType)) {
 			this.send(eventType, data);
+			return false;
+		}
+		if ([ 'control:tabulate' ].includes(eventType)) {
+			control.nextControl(null, data);
 			return false;
 		}
 		if ([ 'handle:mousedown' ].includes(eventType) && (control.context === this)) {

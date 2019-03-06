@@ -37,7 +37,10 @@ define([ './TreeBranch' ], function(TreeBranch) {
 
 	Tree.prototype.on = function(control, eventType, data) {
 		if ([ 'control:focusin' ].includes(eventType) && (control.root === this)) {
-			(control != this.activeElement) ? this.setActiveElement(control) : null;
+			if (control != this.activeElement) {
+				this.setActiveElement(control);
+				this.send('control:changed');
+			}
 			this.send(eventType, data).activeElement.focus();
 			return false;
 		}
@@ -51,11 +54,18 @@ define([ './TreeBranch' ], function(TreeBranch) {
 		}
 		if ([ 'control:updown' ].includes(eventType) && (control.root === this)) {
 			if (!data.shiftKey) {
+				var next = function(entry, updown, itemId) {
+					var nextEntry = this.nextEntry(entry, updown);
+					var activeControl = (itemId != undefined && nextEntry.tabLoop[itemId].isVisible()) ? nextEntry.tabLoop[itemId] : nextEntry.getDefaultActiveElement();
+					nextEntry.focus(activeControl);
+					if (!nextEntry.element.has(document.activeElement).length) {
+						next(nextEntry, updown, itemId);
+					}
+				}.bind(this);
+
 				var updown = (data.which === 38) ? -1 : 1;
-				var nextEntry = nextEntry = this.nextEntry(control, updown);
 				var itemId = (control.activeElement) ? control.activeElement.itemId : null;
-				var activeControl = (itemId != undefined && nextEntry.tabLoop[itemId].isVisible()) ? nextEntry.tabLoop[itemId] : nextEntry.getDefaultActiveElement();
-				nextEntry.focus(activeControl);
+				next(control, updown, itemId);
 				return false;
 			}
 		}
@@ -113,12 +123,12 @@ define([ './TreeBranch' ], function(TreeBranch) {
 		(entry && !entry.isActive) ? entry.setActiveStatus('inactive') : null;
 
 		this.activeElement = entry;
-		this.send('control:changed');
 
 		return this.activeElement;
 	}
 
 	Tree.prototype.setContent = function(data) {
+		delete this.activeElement;
 		data.state = 'expanded';
 		this.buildContent(data.node, data.collection, 1);
 

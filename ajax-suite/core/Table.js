@@ -250,6 +250,10 @@ define([ './Control' ], function(Control) {
 	}
 
 	Table.prototype.on = function(control, eventType, data) {
+		if ([ 'control:focusin' ].includes(eventType)) {
+			this.send(eventType, data).content.focus();
+			return false;
+		}
 		if ([ 'control:tabulate' ].includes(eventType) && (control.context === this)) {
 			this.send(eventType, data);
 			return false;

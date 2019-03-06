@@ -19,11 +19,15 @@ define([ './Control' ], function(Control) {
 	List.prototype._clearCollection_ = function() {
 		this.collection = [];
 		this.container.empty();
+		delete this.activeElement;
 	}
 
 	List.prototype.on = function(control, eventType, data) {
 		if ([ 'control:focusin' ].includes(eventType) && (control.root === this)) {
-			(control != this.activeElement) ? this.setActiveElement(control) : null;
+			if (control != this.activeElement) {
+				this.setActiveElement(control);
+				this.send('control:changed');
+			}
 			this.send(eventType, data).activeElement.focus();
 			return false;
 		}
@@ -79,13 +83,12 @@ define([ './Control' ], function(Control) {
 		(entry && !entry.isActive) ? entry.setActiveStatus('inactive') : null;
 
 		this.activeElement = entry;
-		this.send('control:changed');
 
 		return this.activeElement;
 	}
 
 	List.prototype.sort = function(fields) {
-		this.sortFields = fields.concat(this.sortFields.filter(function(item) {
+		this.sortFields = (fields || []).concat((this.sortFields || []).filter(function(item) {
 			return !fields.includes(item);
 		}));
 

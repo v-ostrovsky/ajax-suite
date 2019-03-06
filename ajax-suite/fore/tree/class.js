@@ -33,7 +33,7 @@ define([ 'core/Tree' ], function(Class) {
 	Tree.prototype.create = function(formBuilder, attributes) {
 		var windowContentBuilder = function(context) {
 			var properties = {
-				attributes : Object.assign(this.dao.parse(attributes), attributes || {}, {
+				attributes : Object.assign(this.dao.dataspec(), attributes || {}, {
 					id : null,
 					code : attributes.code + '*.'
 				}),
@@ -45,6 +45,7 @@ define([ 'core/Tree' ], function(Class) {
 					this.dao = this.dao.create(attrs, this.parameters).execute(function(response) {
 						Class.prototype.create.call(this, response);
 					}.bind(this));
+					windowContent.send('execute', 'destroy');
 				}.bind(this)
 			};
 
@@ -62,6 +63,7 @@ define([ 'core/Tree' ], function(Class) {
 					this.dao = this.dao.edit(windowContent.attributes, this.parameters).execute(function(response) {
 						Class.prototype.edit.call(this, response);
 					}.bind(this));
+					windowContent.send('execute', 'destroy');
 				}.bind(this)
 			};
 
@@ -71,7 +73,7 @@ define([ 'core/Tree' ], function(Class) {
 		this.application.addWindow(windowContentBuilder, true);
 	}
 
-	Tree.prototype.moveBranch = function(formBuilder, attributes, message) {
+	Tree.prototype.moveBranch = function(formBuilder, attributes) {
 		var windowContentBuilder = function(context) {
 			var properties = {
 				attributes : {
@@ -83,6 +85,7 @@ define([ 'core/Tree' ], function(Class) {
 					this.dao = this.dao.moveBranch(windowContent.attributes, this.parameters).execute(function(response) {
 						Class.prototype.moveBranch.call(this, response, windowContent.attributes.what);
 					}.bind(this));
+					windowContent.send('execute', 'destroy');
 				}.bind(this),
 				data : this.getData()
 			};
@@ -101,6 +104,7 @@ define([ 'core/Tree' ], function(Class) {
 					this.dao = this.dao.removeBranch(windowContent.attributes, this.parameters).execute(function(response) {
 						Class.prototype.removeBranch.call(this, response);
 					}.bind(this));
+					windowContent.send('execute', 'destroy');
 				}.bind(this),
 				onNo : function(windowContent) {},
 				header : header,
@@ -117,7 +121,6 @@ define([ 'core/Tree' ], function(Class) {
 		this.parameters = parameters;
 
 		this.dao = this.dao[method](parameters).execute(function(response) {
-			this.setActiveElement(undefined);
 			this.setContent(response);
 		}.bind(this));
 

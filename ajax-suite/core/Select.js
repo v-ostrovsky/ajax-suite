@@ -2,87 +2,58 @@ define([ './Control' ], function(Control) {
 	"use strict";
 
 	/*
-	 * ------------- REPOSITORY CLASS --------------
-	 */
-	function Repository() {}
-
-	Repository.prototype.storeBuilders = function(listBuilder, treeBuilder) {
-		this.builders = {};
-		this.builders.list = listBuilder;
-		this.builders.tree = treeBuilder;
-
-		return this;
-	}
-
-	Repository.prototype.getBuilder = function(builder) {
-		return this.builders[builder];
-	}
-
-	Repository.prototype.storeData = function(data, dataProcessor) {
-		this.data = data;
-		this.dataProcessor = dataProcessor;
-
-		return this;
-	}
-
-	Repository.prototype.getData = function(parameters) {
-		return this.dataProcessor(this.data, parameters);
-	}
-
-	/*
 	 * ------------- SELECT CLASS --------------
 	 */
-	function Select(context, name) {
+	function Select(context, name, contentBuilder) {
 		Control.call(this, context, name);
 
-		$('<div name="content"></div>').appendTo(this.element).css({
-			height : '100%',
-			overflow : 'auto'
+		/* ------------ content ------------ */
+		this.content = contentBuilder(this);
+
+		this.content.element.css({
+			'height' : '100%',
+			'overflow-y' : 'auto'
 		});
 
-		this.element.on({
-			mousedown : function(event) {
-				(event.target === this) ? event.preventDefault() : null;
-			}
-		});
+		/* ------------ this ------------ */
+		this.validator = function(self) {
+			return true;
+		};
 	}
 	Select.prototype = Object.create(Control.prototype);
 	Select.prototype.constructor = Select;
 
 	Select.prototype.on = function(control, eventType, data) {
-		if ([ 'control:focusin' ].includes(eventType)) {
-			this.send(eventType, data);
-			this.content.focus();
-			return false;
-		}
-		if ([ 'control:tabulate' ].includes(eventType)) {
+		if ([ 'control:changed', 'control:tabulate' ].includes(eventType) && (control === this.content)) {
 			this.send(eventType, data);
 			return false;
 		}
-		if ([ 'control:changed' ].includes(eventType) && (control === this.content)) {
-			this.value = this.content.getValue();
-			this.send(eventType, data);
+		if ([ 'item:selected' ].includes(eventType) && (control === this.content)) {
+			this.fire();
 			return false;
 		}
 	}
 
-	Select.prototype.setRepository = function() {
-		this.repository = new Repository();
+	Select.prototype.getDefaultActiveElement = function() {
+		return this.content;
+	}
+
+	Select.prototype.setHandler = function(handler) {
+		this.handler = handler;
 		return this;
 	}
 
-	Select.prototype.destroyContent = function() {
-		if (this.content) {
-			this.content.element.empty();
-			delete this.content;
-		}
+	Select.prototype.setValidator = function(validator) {
+		this.validator = validator;
 		return this;
 	}
 
-	Select.prototype.buildContent = function(contentBuilder) {
-		this.destroyContent();
-		this.content = contentBuilder(this, 'content');
-		return this;
+	Select.prototype.fire = function() {
+		(typeof this.handler === 'function') ? this.handler(this) : this.send('control:changed');
+	}
+
+	Select.prototype.isValid = function() {
+		return this.validator(this);
 	}
 
 	Select.prototype.setContent = function(data) {
@@ -94,19 +65,13 @@ define([ './Control' ], function(Control) {
 		return this.content;
 	}
 
-	Select.prototype.getEntry = function() {
-		return this.content.activeElement;
-	}
-
 	Select.prototype.setValue = function(value) {
-		this.value = value;
-		this.content.setValue(this.value);
-
+		this.content.setValue(value);
 		return this;
 	}
 
 	Select.prototype.getValue = function() {
-		return this.value;
+		return this.content.getValue();
 	}
 
 	return Select;

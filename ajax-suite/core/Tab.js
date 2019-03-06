@@ -40,8 +40,8 @@ define([ './Control', './primitives' ], function(Control, primitives) {
 		$('<div class="tab-handle-title" name="title"></div>').appendTo(this.element);
 		this.title = new Title(this, '*/title');
 
-		$('<button style="font-size: 110%;" name="close">&#x2716</button>').appendTo(this.element);
-		this.btnClose = new primitives.Button(this, '*/close', this.context.destroy.bind(this.context));
+		$('<div style="font-size: 110%;" name="close">&#x2716</div>').appendTo(this.element);
+		this.btnClose = new primitives.Button(this, '*/close').setHandler(this.context.destroy.bind(this.context));
 	}
 	Handle.prototype = Object.create(Control.prototype);
 	Handle.prototype.constructor = Handle;
@@ -86,6 +86,10 @@ define([ './Control', './primitives' ], function(Control, primitives) {
 	Tab.prototype.on = function(control, eventType, data) {
 		if ([ 'control:focusin' ].includes(eventType)) {
 			this.send(eventType, data);
+			return false;
+		}
+		if ([ 'control:tabulate' ].includes(eventType)) {
+			control.nextControl(null, data);
 			return false;
 		}
 		if ([ 'setHeader' ].includes(eventType) && (control.context === this)) {

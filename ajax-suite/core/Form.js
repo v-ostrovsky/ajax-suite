@@ -29,7 +29,8 @@ define([ './Panel' ], function(Panel) {
 			}
 		}
 
-		return this.submit();
+		// return this.submit(); // Возможно, используется для вычисления полей. Проверить и сделать вычисление полей отдельным методом.
+		return this;
 	}
 
 	Form.prototype.isChanged = function() {
@@ -41,18 +42,22 @@ define([ './Panel' ], function(Panel) {
 	}
 
 	Form.prototype.submit = function(handler) {
+		var attributes = {}, hasErrors = false;
 		this._forEach_(function(item) {
-			this.attributes[item] = this.controls[item].getValue();
+			attributes[item] = this.controls[item].getValue();
+			hasErrors = ((typeof this.controls[item].isValid != 'function') || this.controls[item].isValid()) ? hasErrors : true;
 		}.bind(this));
 
-		(typeof handler === 'function') ? handler(this) : null;
+		if (!hasErrors) {
+			Object.assign(this.attributes, attributes);
+			(typeof handler === 'function') ? handler(this) : null;
+		}
 
 		return this;
 	}
 
 	Form.prototype.cancel = function(handler) {
 		this.fillContent(this.attributes);
-
 		(typeof handler === 'function') ? handler(this) : null;
 
 		return this;
